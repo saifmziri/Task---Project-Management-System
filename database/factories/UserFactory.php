@@ -24,7 +24,6 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'status' => $this->faker->randomElement(['active', 'inactive']), // تم إضافته
-            'remember_token' => Str::random(10),
             // يسحب دور عشوائي من الجداول الموجودة (Admin, Manager, Employee)
             'role_id' => Role::inRandomOrder()->first()?->id ?? Role::factory(),
         ];

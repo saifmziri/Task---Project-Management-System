@@ -2,54 +2,81 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
 use App\Http\Requests\RegisterRequest;
-use Illuminate\Support\Facades\Hash;
 use App\Http\Resources\UserResource;
-
+use App\Services\AuthService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
+    protected AuthService $authService;
+
+    // 1. هنا يتم حقن الـ Service الجديد تلقائياً داخل الـ Controller
+    public function __construct(AuthService $authService)
     {
-        $request->validate([
+        $this->authService = $authService;
+    }
+
+    /**
+     * تسجيل الدخول
+     */
+    public function login(Request $request): JsonResponse
+    {
+        $credentials = $request->validate([
             'email' => 'required|string|email',
             'password' => 'required|string',
         ]);
 
-        if(!Auth::attempt($request->only('email', 'password')))
-        return response()->json(['message' => 'Invalid login credentials'], 401);
+        // استدعاء دالة الـ login من الـ Service
+        $result = $this->authService->login($credentials);
 
-        $user=User::where('email', $request->email)->firstOrFail();
-
-        $token=$user->createToken('auth_token')->plainTextToken;
         return response()->json([
-        'message' => 'User logged in successfully',
-        'token' => $token,
-        'user' => new UserResource($user) 
-    ], 200);
+            'message' => 'User logged in successfully',
+            'token' => $result['token'],
+            'user' => new UserResource($result['user']) 
+        ], 200);
     }
 
-    public function register(RegisterRequest $request)
+    /**
+     * التسجيل (هنا السحر! بمجرد استدعاء الدالة، سيقوم الـ Service بإرسال الإيميل تلقائياً)
+     */
+    public function register(RegisterRequest $request): JsonResponse
     {
-        // 1. جلب البيانات التي مرت من الفحص بنجاح
-        $validatedData = $request->validated();
+        $result = $this->authService->register($request->validated());
     
-        // 2. تشفير الباسورد يدوياً لضمان الأمان والتوافق مع الـ Login
-        $validatedData['password'] = Hash::make($validatedData['password']);
-    
-        $user = User::create($validatedData);
-    
-        // 4. توليد التوكن لإدخال المستخدم مباشرة بعد التسجيل
-        $token = $user->createToken('auth_token')->plainTextToken;
-    
-        // 5. إرجاع النتيجة مع كود 201 (Created)
         return response()->json([
-            'message' => 'User registered successfully',
-            'user' => $user,
-            'token' => $token
+            'message' => 'User registered successfully. Please check your email to verify your account.',
+            'token' => $result['token'],
+            'user' => new UserResource($result['user'])
         ], 201);
+    }
+
+    /**
+     * تسجيل الخروج
+     */
+    public function logout(Request $request): JsonResponse
+    {
+        // نمرر كائن المستخدم الحالي المتصل $request->user() إلى الـ Service ليقوم بحذف التوكن
+        $this->authService->logout($request->user());
+        
+        return response()->json(['message' => 'Logout successful'], 200); 
+    }
+    public function verifyEmail(Request $request): JsonResponse
+    {
+    // 1. التحقق من أن التوكن تم إرساله في الطلب
+    $request->validate([
+        'token' => 'required|string'
+    ]);
+
+    // 2. تمرير التوكن إلى الـ Service ليقوم بالتفعيل في قاعدة البيانات
+    $result = $this->authService->verifyEmail($request->token);
+
+    // 3. إرجاع النتيجة وتوكن الدخول الجديد للـ React
+    return response()->json([
+        'message' => 'Email verified successfully',
+        'token' => $result['token'],
+        'user' => new UserResource($result['user'])
+    ], 200);
     }
 }

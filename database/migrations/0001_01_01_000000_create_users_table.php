@@ -14,13 +14,16 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('phone_number')->nullable(); // رقم الهاتف
             $table->timestamp('email_verified_at')->nullable();
+            
+            // 💡 أضف هذا السطر هنا لتخزين توكن التحقق العشوائي
+            $table->string('email_verification_token', 64)->nullable();
+
             $table->string('password');
             
             // ربط المستخدم بجدول الأدوار (Foreign Key)
             $table->foreignId('role_id')->constrained('roles')->onDelete('cascade');
             
             $table->string('status')->default('active'); // حالة الحساب (active / inactive)
-            $table->rememberToken();
             $table->timestamps();
         });
 
