@@ -15,8 +15,8 @@ return new class extends Migration
             $table->string('phone_number')->nullable(); // رقم الهاتف
             $table->timestamp('email_verified_at')->nullable();
             
-            // 💡 أضف هذا السطر هنا لتخزين توكن التحقق العشوائي
             $table->string('email_verification_token', 64)->nullable();
+            $table->timestamp('verification_token_expires_at')->nullable(); 
 
             $table->string('password');
             

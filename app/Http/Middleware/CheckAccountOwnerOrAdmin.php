@@ -16,17 +16,14 @@ class CheckAccountOwnerOrAdmin
     {
         $currentUser = Auth::user();
         
-        // 🎯 السحر هنا: لارافل يمسك الـ ID من الرابط تلقائياً 
-        // اسم البارامتر يعتمد على اسم المتغير في الـ Resource وهو 'user'
-        $userIdFromRoute = $request->route('user'); 
+        $userIdFromRoute = $request->route('user');
+
 
         if (!$currentUser) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        // 🧠 نفس الشرط الذكي الخاص بك:
-        // إذا لم يكن أدمن، وفي نفس الوقت المعرف في الرابط لا يطابق معرفه الشخصي
-        if ($currentUser->role?->role_name !== 'admin' && (string)$currentUser->id !== (string)$userIdFromRoute) {
+        if ($currentUser->role?->role_name !== 'Admin' && (string)$currentUser->id !== (string)$userIdFromRoute) {
             return response()->json([
                 'message' => 'You are not authorized to perform this action.'
             ], 403);

@@ -7,8 +7,10 @@ use Illuminate\Support\Facades\Route;
 
 // 1. المسارات العامة
 Route::post('register', [AuthController::class, 'register']);
-Route::post('login', [AuthController::class, 'login']);
+Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
 Route::post('verify-email', [AuthController::class, 'verifyEmail']);
+Route::post('/email/resend-verification', [AuthController::class, 'resendVerificationEmail'])
+    ->middleware('throttle:3,1'); // 👈 حماية من الـ Spam (السماح بـ 3 محاولات فقط كل دقيقة)
 
 // 2. المسارات المحمية بـ Sanctum (لكل المستخدمين)
 Route::middleware('auth:sanctum')->group(function () {
@@ -17,6 +19,8 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
 
+    Route::post('/user/change-password', [AuthController::class, 'changePassword']);
+
     Route::middleware('CheckUser:Admin')->group(function () {
         Route::apiResource('users', UserController::class)->only(['index', 'show']);
         Route::patch('users/{id}/status', [UserController::class, 'changeStatus']);
@@ -24,7 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('IsOwnerOrAdmin')->group(function () {
     Route::apiResource('users', UserController::class)->only(['update', 'destroy']);
-});
+    });
 
     // تسجيل الخروج
     Route::post('logout', [AuthController::class, 'logout']);

@@ -26,7 +26,6 @@ class UpdateUserRequest extends FormRequest
                 'email',
                 Rule::unique('users')->ignore($userId),
             ],
-            'password'     => 'sometimes|nullable|string|min:8|confirmed',
         ];
     }
 }

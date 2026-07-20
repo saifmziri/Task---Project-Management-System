@@ -11,7 +11,6 @@ class RoleSeeder extends Seeder
     {
         // إنشاء الأدوار الثابتة للنظام
         Role::create(['role_name' => 'Admin']);
-        Role::create(['role_name' => 'Manager']);
         Role::create(['role_name' => 'Employee']);
     }
 }
