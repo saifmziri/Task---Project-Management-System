@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // 1. المسارات العامة
-Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
 Route::post('verify-email', [AuthController::class, 'verifyEmail']);
 Route::post('/email/resend-verification', [AuthController::class, 'resendVerificationEmail'])
@@ -22,6 +21,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/change-password', [AuthController::class, 'changePassword']);
 
     Route::middleware('CheckUser:Admin')->group(function () {
+        Route::post('register', [AuthController::class, 'register']);
         Route::apiResource('users', UserController::class)->only(['index', 'show']);
         Route::patch('users/{id}/status', [UserController::class, 'changeStatus']);
     });
