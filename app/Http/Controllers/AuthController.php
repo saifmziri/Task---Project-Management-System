@@ -2,15 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 use App\Http\Requests\Auth\ResendVerificationRequest;
 use App\Http\Requests\Auth\ChangePasswordRequest;
-use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
@@ -24,35 +22,46 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $credentials = $request->validate([
-            'email' => 'required|string|email',
+            'email'    => 'required|string|email',
             'password' => 'required|string',
         ]);
-
-        $result = $this->authService->login($credentials);
-
-        return response()->json([
-            'message' => 'User logged in successfully',
-            'token'   => $result['token'],
-            'user'    => new UserResource($result['user'])
-        ], Response::HTTP_OK);
+    
+        // server-controlled token name (not user input)
+        $deviceName = $this->resolveDeviceName($request);
+    
+        $result = $this->authService->login($credentials, $deviceName);
+    
+        return $this->ok([
+            'token' => $result['token'],
+            'user'  => new UserResource($result['user']),
+        ], 'User logged in successfully');
+    }
+    
+    private function resolveDeviceName(Request $request): string
+    {
+        $ua = strtolower((string) $request->userAgent());
+    
+        return match (true) {
+            str_contains($ua, 'android') => 'android',
+            str_contains($ua, 'iphone'), str_contains($ua, 'ios') => 'ios',
+            default => 'web',
+        };
     }
 
     public function register(RegisterRequest $request): JsonResponse
     {
         $result = $this->authService->register($request->validated());
 
-        // لا نرجع token قبل التفعيل
-        return response()->json([
-            'message' => 'User registered successfully. Please check your email to verify your account.',
-            'user'    => new UserResource($result['user'])
-        ], Response::HTTP_CREATED);
+        return $this->created([
+            'user' => new UserResource($result['user']),
+        ], 'User registered successfully. Please check your email to verify your account.');
     }
 
     public function logout(Request $request): JsonResponse
     {
         $this->authService->logout($request->user());
 
-        return response()->json(['message' => 'Logout successful'], Response::HTTP_OK);
+        return $this->ok(null, 'Logout successful');
     }
 
     public function verifyEmail(Request $request): JsonResponse
@@ -63,11 +72,10 @@ class AuthController extends Controller
 
         $result = $this->authService->verifyEmail($request->token);
 
-        return response()->json([
-            'message' => 'Email verified successfully',
-            'token'   => $result['token'],
-            'user'    => new UserResource($result['user'])
-        ], Response::HTTP_OK);
+        return $this->ok([
+            'token' => $result['token'],
+            'user'  => new UserResource($result['user']),
+        ], 'Email verified successfully');
     }
 
     public function resendVerificationEmail(ResendVerificationRequest $request): JsonResponse
@@ -75,17 +83,13 @@ class AuthController extends Controller
         $email = $request->validated('email');
         $this->authService->resendVerificationEmail($email);
 
-        return response()->json([
-            'message' => 'إذا كان هذا البريد متاحاً وغير موثق لدينا، فقد تم إرسال رابط تفعيل جديد إليه.'
-        ], Response::HTTP_OK);
+        return $this->ok(null, 'إذا كان هذا البريد متاحاً وغير موثق لدينا، فقد تم إرسال رابط تفعيل جديد إليه.');
     }
 
     public function changePassword(ChangePasswordRequest $request): JsonResponse
     {
         $this->authService->changePassword($request->user(), $request->validated());
 
-        return response()->json([
-            'message' => 'تم تغيير كلمة المرور بنجاح.'
-        ], Response::HTTP_OK);
+        return $this->ok(null, 'تم تغيير كلمة المرور بنجاح.');
     }
 }

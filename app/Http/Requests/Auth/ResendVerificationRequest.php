@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests\Auth;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\BaseRequest;
 
-class ResendVerificationRequest extends FormRequest
+class ResendVerificationRequest extends BaseRequest
 {
     public function authorize(): bool
     {

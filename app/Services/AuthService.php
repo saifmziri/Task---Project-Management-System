@@ -15,29 +15,28 @@ class AuthService
     /**
      * تسجيل الدخول
      */
-    public function login(array $credentials): array
+    public function login(array $credentials, string $deviceName): array
     {
         if (!Auth::attempt($credentials)) {
             throw ValidationException::withMessages([
                 'email' => ['Invalid login credentials'],
             ]);
         }
-
+    
         $user = User::where('email', $credentials['email'])->firstOrFail();
-
-        // منع الدخول قبل تفعيل البريد
+    
         if (is_null($user->email_verified_at)) {
             throw ValidationException::withMessages([
                 'email' => ['Please verify your email before logging in.'],
             ]);
         }
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return [
-            'user'  => $user,
-            'token' => $token,
-        ];
+    
+        // revoke only same-device token
+        $user->tokens()->where('name', $deviceName)->delete();
+    
+        $token = $user->createToken($deviceName)->plainTextToken;
+    
+        return ['user' => $user, 'token' => $token];
     }
 
     /**

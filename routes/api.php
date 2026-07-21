@@ -18,7 +18,6 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
 
-    Route::post('/user/change-password', [AuthController::class, 'changePassword']);
 
     Route::middleware('CheckUser:Admin')->group(function () {
         Route::post('register', [AuthController::class, 'register']);
@@ -27,7 +26,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::middleware('IsOwnerOrAdmin')->group(function () {
-    Route::apiResource('users', UserController::class)->only(['update', 'destroy']);
+        Route::apiResource('users', UserController::class)->only(['update', 'destroy']);
+        Route::post('/user/change-password', [AuthController::class, 'changePassword']);
     });
 
     // تسجيل الخروج
