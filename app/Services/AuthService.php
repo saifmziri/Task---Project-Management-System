@@ -112,8 +112,7 @@ class AuthService
 
         $user->update([
             'email_verification_token'      => hash('sha256', $rawToken),
-            // وحّدها حسب سياستك (10 دقائق أو 24 ساعة)
-            'verification_token_expires_at' => now()->addMinutes(10),
+            'verification_token_expires_at' => now()->addMinutes(30),
         ]);
 
         $frontendUrl = config('app.frontend_url', 'http://localhost:5173');
@@ -130,7 +129,9 @@ class AuthService
         $user = User::where('email', $email)->first();
 
         if (!$user || $user->email_verified_at !== null) {
-            return;
+            throw ValidationException::withMessages([
+                'email' => ['هذا الحساب مفعل بالفعل.'],
+            ]);
         }
 
         $this->sendCustomVerificationEmail($user);

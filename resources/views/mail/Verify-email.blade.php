@@ -91,7 +91,7 @@
 
         <!-- محتوى الإيميل الرئيسي -->
         <div class="email-body">
-            <p>Welcome, <strong>{{ $user->name }}</strong>!</p>
+            <p>Welcome, <strong>{{ $user->full_name }}</strong>!</p>
             <p>Thank you for signing up. We're excited to help you organize your workflows and manage your tasks dynamic
                 and smoothly.</p>
             <p>Please click the button below to verify your email address and instantly activate your account:</p>
